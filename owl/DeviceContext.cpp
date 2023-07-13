@@ -326,7 +326,7 @@ namespace owl {
    pipelineCompileOptions.usesPrimitiveTypeFlags
         = OPTIX_PRIMITIVE_TYPE_FLAGS_ROUND_LINEAR
         | OPTIX_PRIMITIVE_TYPE_FLAGS_ROUND_QUADRATIC_BSPLINE
-        | OPTIX_PRIMITIVE_TYPE_FLAGS_ROUND_CUBIC_BSPLINE;
+        | OPTIX_PRIMITIVE_TYPE_FLAGS_ROUND_CATMULLROM;
 #endif
 
 #if OWL_CAN_DO_SPHERES
@@ -429,7 +429,7 @@ namespace owl {
           builtinISOptions.builtinISModuleType = OPTIX_PRIMITIVE_TYPE_ROUND_QUADRATIC_BSPLINE;
           break;
         case 3:
-          builtinISOptions.builtinISModuleType = OPTIX_PRIMITIVE_TYPE_ROUND_CUBIC_BSPLINE;
+          builtinISOptions.builtinISModuleType = OPTIX_PRIMITIVE_TYPE_ROUND_CATMULLROM;
           break;
         }
         builtinISOptions.usesMotionBlur = parent->motionBlurEnabled;  // enable motion-blur for built-in intersector
