@@ -159,7 +159,7 @@ namespace owl {
         curveArray.curveType = OPTIX_PRIMITIVE_TYPE_ROUND_QUADRATIC_BSPLINE;
         break;
       case 3:
-        curveArray.curveType = OPTIX_PRIMITIVE_TYPE_ROUND_CUBIC_BSPLINE;
+        curveArray.curveType = OPTIX_PRIMITIVE_TYPE_ROUND_CATMULLROM;
         break;
       default:
         OWL_RAISE("invalid/unsupported curve degree for owl curves geometry");

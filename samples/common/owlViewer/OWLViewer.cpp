@@ -94,6 +94,16 @@ namespace owl {
       alreadyInitialized = true;
     }
 
+    void OWLViewer::destroy()
+    {
+        glfwDestroyWindow(handle);
+    }
+
+    void OWLViewer::terminate()
+    {
+        glfwTerminate();
+    }
+
     /*! helper function that dumps the current frame buffer in a png
       file of given name */
     void OWLViewer::screenShot(const std::string &fileName)
@@ -391,6 +401,7 @@ namespace owl {
     /*! this gets called when the user presses a key on the keyboard ... */
     void OWLViewer::key(char key, const vec2i &where)
     {
+      customKey(key, where);
       if (cameraManipulator) cameraManipulator->key(key,where);
     }
 
@@ -410,6 +421,56 @@ namespace owl {
     void OWLViewer::setTitle(const std::string &s)
     {
       glfwSetWindowTitle(handle,s.c_str());
+    }
+
+    /*! callback for a window resizing event */
+    static void glfwindow_reshape_cb(GLFWwindow* window, int width, int height)
+    {
+        OWLViewer* gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
+        assert(gw);
+        gw->resize(vec2i(width, height));
+    }
+
+    /*! callback for a key press */
+    static void glfwindow_char_cb(GLFWwindow* window,
+        unsigned int key)
+    {
+        OWLViewer* gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
+        assert(gw);
+        gw->key(key, gw->getMousePos());
+    }
+
+    /*! callback for a key press */
+    static void glfwindow_key_cb(GLFWwindow* window,
+        int key,
+        int scancode,
+        int action,
+        int mods)
+    {
+        OWLViewer* gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
+        assert(gw);
+        if (action == GLFW_PRESS) {
+            gw->special(key, mods, gw->getMousePos());
+        }
+    }
+
+    /*! callback for _moving_ the mouse to a new position */
+    static void glfwindow_mouseMotion_cb(GLFWwindow* window, double x, double y)
+    {
+        OWLViewer* gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
+        assert(gw);
+        gw->mouseMotion(vec2i((int)x, (int)y));
+    }
+
+    /*! callback for pressing _or_ releasing a mouse button*/
+    static void glfwindow_mouseButton_cb(GLFWwindow* window,
+        int button,
+        int action,
+        int mods)
+    {
+        OWLViewer* gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
+        assert(gw);
+        gw->mouseButton(button, action, mods);
     }
 
     OWLViewer::OWLViewer(const std::string &title,
@@ -434,57 +495,12 @@ namespace owl {
       glfwSetWindowUserPointer(handle, this);
       glfwMakeContextCurrent(handle);
       glfwSwapInterval( (enableVsync) ? 1 : 0 );
-    }
 
-
-    /*! callback for a window resizing event */
-    static void glfwindow_reshape_cb(GLFWwindow* window, int width, int height )
-    {
-      OWLViewer *gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
-      assert(gw);
-      gw->resize(vec2i(width,height));
-    }
-
-    /*! callback for a key press */
-    static void glfwindow_char_cb(GLFWwindow *window,
-                                  unsigned int key)
-    {
-      OWLViewer *gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
-      assert(gw);
-      gw->key(key,gw->getMousePos());
-    }
-
-    /*! callback for a key press */
-    static void glfwindow_key_cb(GLFWwindow *window,
-                                 int key,
-                                 int scancode,
-                                 int action,
-                                 int mods)
-    {
-      OWLViewer *gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
-      assert(gw);
-      if (action == GLFW_PRESS) {
-        gw->special(key,mods,gw->getMousePos());
-      }
-    }
-
-    /*! callback for _moving_ the mouse to a new position */
-    static void glfwindow_mouseMotion_cb(GLFWwindow *window, double x, double y)
-    {
-      OWLViewer *gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
-      assert(gw);
-      gw->mouseMotion(vec2i((int)x, (int)y));
-    }
-
-    /*! callback for pressing _or_ releasing a mouse button*/
-    static void glfwindow_mouseButton_cb(GLFWwindow *window,
-                                         int button,
-                                         int action,
-                                         int mods)
-    {
-      OWLViewer *gw = static_cast<OWLViewer*>(glfwGetWindowUserPointer(window));
-      assert(gw);
-      gw->mouseButton(button,action,mods);
+      glfwSetFramebufferSizeCallback(handle, glfwindow_reshape_cb);
+      glfwSetMouseButtonCallback(handle, glfwindow_mouseButton_cb);
+      glfwSetKeyCallback(handle, glfwindow_key_cb);
+      glfwSetCharCallback(handle, glfwindow_char_cb);
+      glfwSetCursorPosCallback(handle, glfwindow_mouseMotion_cb);
     }
 
     void OWLViewer::mouseButton(int button, int action, int mods)
@@ -559,12 +575,6 @@ namespace owl {
       glfwGetFramebufferSize(handle, &width, &height);
       resize(vec2i(width,height));
 
-      glfwSetFramebufferSizeCallback(handle, glfwindow_reshape_cb);
-      glfwSetMouseButtonCallback(handle, glfwindow_mouseButton_cb);
-      glfwSetKeyCallback(handle, glfwindow_key_cb);
-      glfwSetCharCallback(handle, glfwindow_char_cb);
-      glfwSetCursorPosCallback(handle, glfwindow_mouseMotion_cb);
-
       while (!glfwWindowShouldClose(handle) && keepgoing()) {
         static double lastCameraUpdate = -1.f;
         if (camera.lastModified != lastCameraUpdate) {
@@ -573,6 +583,8 @@ namespace owl {
         }
         render();
         draw();
+
+        drawUI();
 
         glfwSwapBuffers(handle);
         glfwPollEvents();

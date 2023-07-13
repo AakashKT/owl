@@ -83,16 +83,22 @@ namespace owl {
                 // const float worldScale      = 1.f
                 );
       
+      void terminate();
+      void destroy();
+      
       /*! window notifies us that we got resized */     
       virtual void resize(const vec2i &newSize);
 
       void setTitle(const std::string &s);
 
       /*! gets called whenever the viewer needs us to re-render out widget */
-      virtual void render() {}
+      virtual long long render() { return 0; }
       
       /*! draw framebuffer using OpenGL */
       virtual void draw();
+
+      virtual void drawUI() {}
+      virtual void customKey(char key, const vec2i& pos) {}
 
       struct ButtonState {
         bool  isPressed        { false };
@@ -222,6 +228,11 @@ namespace owl {
         glfwGetCursorPos(handle,&x,&y);
         return vec2i((int)x, (int)y);
       }
+
+      int accumId = 0;
+      float4* accumBuffer{ nullptr };
+      float4* averageBuffer{ 0 };
+
     private:
       friend struct CameraManipulator;
       friend struct CameraInspectMode;
